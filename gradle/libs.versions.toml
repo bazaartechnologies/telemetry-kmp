@@ -1,0 +1,22 @@
+[versions]
+# Kotlin and Core Libraries
+kotlin = "2.0.21"
+coroutines = "1.10.2"
+serialization = "1.9.0"
+ktor = "3.0.0"
+
+# OpenTelemetry
+otel = "1.51.0" # BOM and general OpenTelemetry libraries
+otel-android = "0.11.0-alpha"
+
+[libraries]
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+opentelemetry-bom = { module = "io.opentelemetry:opentelemetry-bom", version.ref = "otel" }
+opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api", version.ref = "otel" }
+opentelemetry-sdk = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "otel" }
+opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "otel" }
+opentelemetry-android-agent = { module = "io.opentelemetry.android:android-agent", version.ref = "otel-android" }
