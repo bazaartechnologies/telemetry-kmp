@@ -32,6 +32,9 @@ kotlin {
                 implementation(libs.ktor.client.core)
                 // If you use Ktor in common code and need a default engine (or expect platform engines)
                 // implementation(libs.ktor.client.cio) // Example
+
+                // OpenTelemetry API can be common if using the KMP native version across all platforms
+                // For now, KMP API is added to iosMain, Java API to androidMain
             }
         }
         val commonTest by getting {
@@ -42,31 +45,33 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation(project.dependencies.platform(libs.opentelemetry.bom))
-                implementation(libs.opentelemetry.api)
-                implementation(libs.opentelemetry.sdk)
-                implementation(libs.opentelemetry.exporter.otlp)
+                implementation(libs.opentelemetry.api) // Java API
+                implementation(libs.opentelemetry.sdk)  // Java SDK
+                implementation(libs.opentelemetry.exporter.otlp) // Java OTLP gRPC exporter
                 implementation(libs.opentelemetry.android.agent)
                 implementation(libs.ktor.client.android)
             }
         }
-        val iosX64Main by getting {
+
+        // Create an intermediate source set for all iOS targets
+        val iosMain by creating {
+            dependsOn(commonMain)
             dependencies {
                 implementation(libs.ktor.client.darwin)
+                implementation(libs.opentelemetry.kotlin.api)
+                implementation(libs.opentelemetry.kotlin.sdk)
+                implementation(libs.opentelemetry.kotlin.exporter.otlp.http)
             }
+        }
+        val iosX64Main by getting {
+            dependsOn(iosMain)
         }
         val iosArm64Main by getting {
-            dependencies {
-                implementation(libs.ktor.client.darwin)
-            }
+            dependsOn(iosMain)
         }
         val iosSimulatorArm64Main by getting {
-            dependencies {
-                implementation(libs.ktor.client.darwin)
-            }
+            dependsOn(iosMain)
         }
-        // Consider creating intermediate source sets if there's shared code between iOS targets
-        // e.g., val iosMain by creating { dependsOn(commonMain) }
-        // then iosX64Main.dependsOn(iosMain), etc.
     }
 }
 

@@ -69,8 +69,8 @@ Telemetry.gauge("battery.level", 87.0)
 
 ## Platform Support
 
-- **Android**: Full OpenTelemetry SDK integration (tracing, metrics, logs)
-- **iOS**: Logging and stubs (OTLP exporter coming soon)
+- **Android**: Full OpenTelemetry SDK integration (tracing, metrics, logs via OTLP gRPC)
+- **iOS**: Full OpenTelemetry SDK integration (tracing, metrics, logs via OTLP HTTP)
 - **JVM/Other**: Extend as needed
 
 ---

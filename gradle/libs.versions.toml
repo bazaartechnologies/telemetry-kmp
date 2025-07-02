@@ -8,6 +8,7 @@ ktor = "3.0.0"
 # OpenTelemetry
 otel = "1.51.0" # BOM and general OpenTelemetry libraries
 otel-android = "0.11.0-alpha"
+opentelemetry-kotlin = "0.6.0" # For KMP native OpenTelemetry
 
 [libraries]
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -20,3 +21,12 @@ opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api", version.ref
 opentelemetry-sdk = { module = "io.opentelemetry:opentelemetry-sdk", version.ref = "otel" }
 opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "otel" }
 opentelemetry-android-agent = { module = "io.opentelemetry.android:android-agent", version.ref = "otel-android" }
+
+# OpenTelemetry Kotlin Native
+opentelemetry-kotlin-api = { module = "io.opentelemetry.kotlin:opentelemetry-api", version.ref = "opentelemetry-kotlin"}
+opentelemetry-kotlin-sdk = { module = "io.opentelemetry.kotlin:opentelemetry-sdk", version.ref = "opentelemetry-kotlin" }
+opentelemetry-kotlin-exporter-otlp-http = { module = "io.opentelemetry.kotlin:opentelemetry-exporter-otlp-http", version.ref = "opentelemetry-kotlin" }
+# Add if gRPC is preferred and available for KMP iOS:
+# opentelemetry-kotlin-exporter-otlp-grpc = { module = "io.opentelemetry.kotlin:opentelemetry-exporter-otlp-grpc", version.ref = "opentelemetry-kotlin" }
+# Ktor transport for the exporter (often a transitive dependency of the http exporter, but good to be aware of)
+# opentelemetry-kotlin-transport-ktor-client = { module = "io.opentelemetry.kotlin:opentelemetry-transport-ktor-client", version.ref = "opentelemetry-kotlin" }
