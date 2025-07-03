@@ -23,7 +23,8 @@ opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporte
 opentelemetry-android-agent = { module = "io.opentelemetry.android:android-agent", version.ref = "otel-android" }
 
 # Wire Protocol Buffers
-wire-runtime = { module = "com.squareup.wire:wire-runtime-multiplatform", version.ref = "wire" }
+wire-runtime = { module = "com.squareup.wire:wire-runtime", version.ref = "wire" }
+wire-runtime-kotlinx-serialization = { module = "com.squareup.wire:wire-runtime-kotlinx-serialization", version.ref = "wire" }
 
 [plugins]
 wire = { id = "com.squareup.wire", version.ref = "wire" }

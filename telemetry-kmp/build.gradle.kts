@@ -31,7 +31,8 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.ktor.client.core)
-                implementation(libs.plugins.wire) // Wire runtime for common
+                implementation(libs.wire.runtime)
+//                implementation(libs.wire.runtime) // Wire runtime for common
                 // If you use Ktor in common code and need a default engine (or expect platform engines)
                 // implementation(libs.ktor.client.cio) // Example
             }
