@@ -6,23 +6,7 @@ plugins {
     kotlin("multiplatform") // Version should be managed by settings.gradle.kts or root project
     id("org.jetbrains.kotlin.plugin.serialization") // Version should be managed
     id("maven-publish")
-    id("com.squareup.wire")
-}
-
-wire {
-    kotlin {
-        // Configure Wire for Kotlin code generation
-        // For KMP, outputting to a common directory that platform source sets can pick up from is typical.
-        // Or, configure per-target generation if needed.
-        // Wire plugin should ideally handle KMP source set integration.
-        // If proto files are in commonMain, they can be used by all targets.
-        // Example: include "opentelemetry/proto/**/*.proto"
-        // out = "${buildDir}/generated/source/wire" // Default or specify
-        // For KMP, you often target specific source sets or common.
-        // Let's assume protos in src/commonMain/proto and generate for commonMain if possible,
-        // or specifically for iosMain if common generation is problematic for other platforms.
-        // For now, this basic setup might need refinement based on actual proto paths and KMP structure.
-    }
+    alias(libs.plugins.wire)
 }
 
 kotlin {
@@ -47,7 +31,7 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.ktor.client.core)
-                implementation(libs.wire.runtime) // Wire runtime for common
+                implementation(libs.plugins.wire) // Wire runtime for common
                 // If you use Ktor in common code and need a default engine (or expect platform engines)
                 // implementation(libs.ktor.client.cio) // Example
             }
@@ -100,5 +84,21 @@ android {
     }
     buildFeatures {
         buildConfig = true
+    }
+}
+
+wire {
+    kotlin {
+        // Configure Wire for Kotlin code generation
+        // For KMP, outputting to a common directory that platform source sets can pick up from is typical.
+        // Or, configure per-target generation if needed.
+        // Wire plugin should ideally handle KMP source set integration.
+        // If proto files are in commonMain, they can be used by all targets.
+        // Example: include "opentelemetry/proto/**/*.proto"
+        // out = "${buildDir}/generated/source/wire" // Default or specify
+        // For KMP, you often target specific source sets or common.
+        // Let's assume protos in src/commonMain/proto and generate for commonMain if possible,
+        // or specifically for iosMain if common generation is problematic for other platforms.
+        // For now, this basic setup might need refinement based on actual proto paths and KMP structure.
     }
 }

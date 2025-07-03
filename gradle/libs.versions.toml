@@ -24,3 +24,6 @@ opentelemetry-android-agent = { module = "io.opentelemetry.android:android-agent
 
 # Wire Protocol Buffers
 wire-runtime = { module = "com.squareup.wire:wire-runtime-multiplatform", version.ref = "wire" }
+
+[plugins]
+wire = { id = "com.squareup.wire", version.ref = "wire" }
