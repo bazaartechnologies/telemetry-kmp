@@ -69,9 +69,21 @@ Telemetry.gauge("battery.level", 87.0)
 
 ## Platform Support
 
-- **Android**: Full OpenTelemetry SDK integration (tracing, metrics, logs)
-- **iOS**: Logging and stubs (OTLP exporter coming soon)
-- **JVM/Other**: Extend as needed
+- **Android**: Full OpenTelemetry SDK integration (tracing, metrics, logs via OTLP gRPC using official OpenTelemetry Java SDK).
+- **iOS**: Telemetry export via a custom OTLP/HTTP exporter (traces, logs, metrics). This implementation uses Ktor for HTTP transport and requires manual OTLP protobuf message construction (via Wire-generated code from `.proto` schemas).
+- **JVM/Other**: Extend as needed.
+
+---
+
+## iOS OTLP Implementation Details
+
+The current iOS OTLP/HTTP exporter is a custom implementation due to the evolving nature of official OpenTelemetry KMP libraries for direct OTLP export on iOS. Key aspects:
+- Uses Ktor (`ktor-client-darwin`) for HTTP communication.
+- Relies on Square Wire (`com.squareup.wire`) to generate Kotlin data classes from official OTLP `.proto` schema files.
+- Telemetry data (spans, logs, metrics) is manually mapped to these generated protobuf objects and then serialized for export.
+- Implements batching and retry mechanisms for sending data.
+
+This approach ensures OTLP compatibility. Future work may involve migrating to official OpenTelemetry Kotlin SDK exporters for iOS as they become fully featured and stable for OTLP.
 
 ---
 
