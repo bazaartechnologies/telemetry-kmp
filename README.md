@@ -11,11 +11,23 @@ A modern, production-ready **Kotlin Multiplatform Telemetry SDK** for Android, i
 
 - **Kotlin Multiplatform**: Shared core for Android, iOS, and other targets
 - **OpenTelemetry SDK**: Native integration for tracing, metrics, and logs (Android)
+- **Custom OTLP/HTTP Exporter for iOS**: Uses Ktor for HTTP and Wire-generated types from official OpenTelemetry protos
 - **Unified API**: Tracing, metrics, structured logging, and crash/vitals reporting
 - **Pluggable Exporters**: OTLP/gRPC out of the box; extend for custom backends
 - **App & Device Vitals**: Battery, memory, CPU, network, storage, and more
 - **Lifecycle & Crash Handling**: Automatic app state and crash reporting
 - **Easy Integration**: Use from Android, iOS (Swift/ObjC), or other KMP targets
+
+---
+
+## Current State
+
+- **Android**: Uses the official OpenTelemetry Java SDK for full tracing, metrics, and logs via OTLP/gRPC.
+- **iOS**: Implements a custom OTLP/HTTP exporter:
+  - All telemetry data (spans, logs, metrics) is mapped to real Wire-generated types from the official OpenTelemetry proto files.
+  - Data is exported over HTTP using Ktor.
+  - Batching and retry logic are implemented.
+  - The codebase currently generates gRPC client stubs via Wire, but these are not used for iOS/HTTP export and should be excluded in the future for leaner builds.
 
 ---
 
@@ -70,20 +82,18 @@ Telemetry.gauge("battery.level", 87.0)
 ## Platform Support
 
 - **Android**: Full OpenTelemetry SDK integration (tracing, metrics, logs via OTLP gRPC using official OpenTelemetry Java SDK).
-- **iOS**: Telemetry export via a custom OTLP/HTTP exporter (traces, logs, metrics). This implementation uses Ktor for HTTP transport and requires manual OTLP protobuf message construction (via Wire-generated code from `.proto` schemas).
+- **iOS**: Telemetry export via a custom OTLP/HTTP exporter (traces, logs, metrics). This implementation uses Ktor for HTTP transport and requires manual OTLP protobuf message construction (via Wire-generated code from `.proto` schemas). All mapping now uses real proto types.
 - **JVM/Other**: Extend as needed.
 
 ---
 
-## iOS OTLP Implementation Details
+## Roadmap
 
-The current iOS OTLP/HTTP exporter is a custom implementation due to the evolving nature of official OpenTelemetry KMP libraries for direct OTLP export on iOS. Key aspects:
-- Uses Ktor (`ktor-client-darwin`) for HTTP communication.
-- Relies on Square Wire (`com.squareup.wire`) to generate Kotlin data classes from official OTLP `.proto` schema files.
-- Telemetry data (spans, logs, metrics) is manually mapped to these generated protobuf objects and then serialized for export.
-- Implements batching and retry mechanisms for sending data.
-
-This approach ensures OTLP compatibility. Future work may involve migrating to official OpenTelemetry Kotlin SDK exporters for iOS as they become fully featured and stable for OTLP.
+1. **Exclude gRPC client code from Wire generation** for leaner builds and faster compilation (currently, unused gRPC stubs are generated).
+2. **Add comprehensive tests and validation** for the iOS exporter and mapping logic.
+3. **Monitor and migrate to the official OpenTelemetry KMP SDK for iOS** when it becomes stable and feature-complete.
+4. **Add more exporters and platform support** as needed (e.g., Jaeger, Zipkin, custom backends).
+5. **Improve documentation and usage examples** for all supported platforms.
 
 ---
 
