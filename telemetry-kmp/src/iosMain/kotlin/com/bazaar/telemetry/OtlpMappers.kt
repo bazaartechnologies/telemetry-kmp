@@ -1,5 +1,30 @@
 package com.bazaar.telemetry
 
+import io.opentelemetry.proto.common.v1.AnyValue
+import io.opentelemetry.proto.common.v1.KeyValue
+import io.opentelemetry.proto.resource.v1.Resource
+import io.opentelemetry.proto.trace.v1.Span
+import okio.ByteString
+import io.opentelemetry.proto.logs.v1.LogRecord
+import io.opentelemetry.proto.logs.v1.SeverityNumber
+import io.opentelemetry.proto.metrics.v1.Metric
+import io.opentelemetry.proto.metrics.v1.NumberDataPoint
+import io.opentelemetry.proto.metrics.v1.Sum
+import io.opentelemetry.proto.metrics.v1.Gauge
+import io.opentelemetry.proto.metrics.v1.Histogram
+import io.opentelemetry.proto.metrics.v1.HistogramDataPoint
+import io.opentelemetry.proto.metrics.v1.AggregationTemporality
+import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest
+import io.opentelemetry.proto.collector.logs.v1.ExportLogsServiceRequest
+import io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest
+import io.opentelemetry.proto.trace.v1.ResourceSpans
+import io.opentelemetry.proto.trace.v1.ScopeSpans
+import io.opentelemetry.proto.logs.v1.ResourceLogs
+import io.opentelemetry.proto.logs.v1.ScopeLogs
+import io.opentelemetry.proto.metrics.v1.ResourceMetrics
+import io.opentelemetry.proto.metrics.v1.ScopeMetrics
+import io.opentelemetry.proto.common.v1.InstrumentationScope
+
 // TODO: Import actual generated OTLP classes from Wire.
 // These will likely be in packages like:
 // import opentelemetry.proto.common.v1.*
@@ -11,19 +36,19 @@ package com.bazaar.telemetry
 // Replace these with actual generated types once Wire build is successful.
 
 // Placeholder for actual generated types (these are NOT real types, just for structure)
-typealias OtlpAnyValue = Any // Replace with opentelemetry.proto.common.v1.AnyValue
-typealias OtlpKeyValue = Any // Replace with opentelemetry.proto.common.v1.KeyValue
-typealias OtlpResource = Any // Replace with opentelemetry.proto.resource.v1.Resource
-typealias OtlpSpan = Any // Replace with opentelemetry.proto.trace.v1.Span
-typealias OtlpSpanKind = Int // Replace with opentelemetry.proto.trace.v1.Span.SpanKind (enum)
-typealias OtlpStatus = Any // Replace with opentelemetry.proto.trace.v1.Status
-typealias OtlpStatusCode = Int // Replace with opentelemetry.proto.trace.v1.Status.StatusCode (enum)
-typealias OtlpLogRecord = Any // Replace with opentelemetry.proto.logs.v1.LogRecord
-typealias OtlpSeverityNumber = Int // Replace with opentelemetry.proto.logs.v1.SeverityNumber (enum)
-typealias OtlpMetric = Any // Replace with opentelemetry.proto.metrics.v1.Metric
-typealias OtlpNumberDataPoint = Any // Replace with opentelemetry.proto.metrics.v1.NumberDataPoint
-typealias OtlpHistogramDataPoint = Any // Replace with opentelemetry.proto.metrics.v1.HistogramDataPoint
-typealias OtlpAggregationTemporality = Int // Replace with opentelemetry.proto.metrics.v1.AggregationTemporality (enum)
+// typealias OtlpAnyValue = Any
+// typealias OtlpKeyValue = Any
+// typealias OtlpResource = Any
+// typealias OtlpSpan = Any
+// typealias OtlpSpanKind = Int // Replace with opentelemetry.proto.trace.v1.Span.SpanKind (enum)
+// typealias OtlpStatus = Any // Replace with opentelemetry.proto.trace.v1.Status
+// typealias OtlpStatusCode = Int // Replace with opentelemetry.proto.trace.v1.Status.StatusCode (enum)
+// typealias OtlpLogRecord = Any // Replace with opentelemetry.proto.logs.v1.LogRecord
+// typealias OtlpSeverityNumber = Int // Replace with opentelemetry.proto.logs.v1.SeverityNumber (enum)
+// typealias OtlpMetric = Any // Replace with opentelemetry.proto.metrics.v1.Metric
+// typealias OtlpNumberDataPoint = Any // Replace with opentelemetry.proto.metrics.v1.NumberDataPoint
+// typealias OtlpHistogramDataPoint = Any // Replace with opentelemetry.proto.metrics.v1.HistogramDataPoint
+// typealias OtlpAggregationTemporality = Int // Replace with opentelemetry.proto.metrics.v1.AggregationTemporality (enum)
 
 // --- Time Conversion ---
 
@@ -41,93 +66,70 @@ fun Long.millisToNanos(): Long {
 // --- Attribute and Resource Mapping ---
 
 /**
- * Converts the library's [Attributes] to a list of OTLP [OtlpKeyValue].
- * This function will need to be implemented using the actual generated Wire classes.
+ * Converts the library's [Attributes] to a list of OTLP [KeyValue].
  */
-fun Attributes.toOtlpKeyValues(): List<OtlpKeyValue> {
-    // val otlpAttributes = mutableListOf<opentelemetry.proto.common.v1.KeyValue>()
-    // this.toMap().forEach { (key, value) ->
-    //     val anyValueBuilder = opentelemetry.proto.common.v1.AnyValue.Builder()
-    //     when (value) {
-    //         is String -> anyValueBuilder.string_value(value)
-    //         is Long -> anyValueBuilder.int_value(value)
-    //         is Double -> anyValueBuilder.double_value(value)
-    //         is Boolean -> anyValueBuilder.bool_value(value)
-    //         // TODO: Handle lists, byte arrays, etc., if supported by your Attributes
-    //         else -> anyValueBuilder.string_value(value.toString()) // Fallback
-    //     }
-    //     otlpAttributes.add(
-    //         opentelemetry.proto.common.v1.KeyValue.Builder()
-    //             .key(key)
-    //             .value(anyValueBuilder.build())
-    //             .build()
-    //     )
-    // }
-    // return otlpAttributes
-    println("TODO: Implement Attributes.toOtlpKeyValues() with actual Wire-generated types.")
-    return emptyList()
-}
+fun Attributes.toOtlpKeyValues(): List<KeyValue> =
+    this.toMap().map { (key, value) ->
+        val anyValue = when (value) {
+            is String -> AnyValue(string_value = value)
+            is Long -> AnyValue(int_value = value)
+            is Int -> AnyValue(int_value = value.toLong())
+            is Double -> AnyValue(double_value = value)
+            is Boolean -> AnyValue(bool_value = value)
+            else -> AnyValue(string_value = value.toString())
+        }
+        KeyValue(key = key, value_ = anyValue)
+    }
 
 /**
- * Creates an OTLP [OtlpResource] object.
- * Typically includes service.name and other common identifiers.
+ * Creates an OTLP [Resource] object from config and common attributes.
  */
-fun createOtlpResource(config: TelemetryConfig, commonAttributes: Attributes): OtlpResource {
-    // val resourceAttributes = mutableListOf<opentelemetry.proto.common.v1.KeyValue>()
-    // // Add service.name (mandatory)
-    // resourceAttributes.add(
-    //     opentelemetry.proto.common.v1.KeyValue.Builder()
-    //         .key("service.name")
-    //         .value(opentelemetry.proto.common.v1.AnyValue.Builder().string_value(config.serviceName).build())
-    //         .build()
-    // )
-    // // Add other common attributes from config or a predefined set
-    // commonAttributes.toOtlpKeyValues().let { resourceAttributes.addAll(it) }
-    //
-    // return opentelemetry.proto.resource.v1.Resource.Builder()
-    //     .attributes(resourceAttributes)
-    //     .build()
-    println("TODO: Implement createOtlpResource() with actual Wire-generated types.")
-    return Any() // Placeholder
+fun createOtlpResource(config: TelemetryConfig, commonAttributes: Attributes): Resource {
+    val resourceAttributes = mutableListOf<KeyValue>()
+    // Add service.name (mandatory)
+    resourceAttributes.add(
+        KeyValue(
+            key = "service.name",
+            value_ = AnyValue(string_value = config.serviceName)
+        )
+    )
+    // Add other common attributes
+    resourceAttributes.addAll(commonAttributes.toOtlpKeyValues())
+    return Resource(attributes = resourceAttributes)
 }
 
 
 // --- Trace Mapping ---
 
 /**
- * Converts library span data to an OTLP [OtlpSpan].
+ * Converts library span data to an OTLP [Span].
  * This is a simplified example. Actual span data includes name, timestamps, parent ID, status, kind, events, links.
  */
 fun mapToOtlpSpan(
-    traceId: String, // Assuming String, OTLP expects ByteString
-    spanId: String,  // Assuming String, OTLP expects ByteString
-    parentSpanId: String? = null, // Assuming String
+    traceId: String, // Hex string, must be 16 bytes (32 hex chars)
+    spanId: String,  // Hex string, must be 8 bytes (16 hex chars)
+    parentSpanId: String? = null, // Hex string or null
     name: String,
     startTimeMillis: Long,
     endTimeMillis: Long,
     attributes: Attributes,
     status: String, // Simplified: "OK", "ERROR"
-    kind: Int // Simplified: map to OtlpSpanKind
-): OtlpSpan {
-    // val otlpTraceId = ByteString.decodeHex(traceId) // Or appropriate conversion
-    // val otlpSpanId = ByteString.decodeHex(spanId)
-    // val otlpParentSpanId = parentSpanId?.let { ByteString.decodeHex(it) }
-    //
-    // val spanBuilder = opentelemetry.proto.trace.v1.Span.Builder()
-    //     .trace_id(otlpTraceId)
-    //     .span_id(otlpSpanId)
-    //     .name(name)
-    //     .start_time_unix_nano(startTimeMillis.millisToNanos())
-    //     .end_time_unix_nano(endTimeMillis.millisToNanos())
-    //     .attributes(attributes.toOtlpKeyValues())
-    //     // .status(mapToOtlpStatus(status))
-    //     // .kind(mapToOtlpSpanKind(kind))
-    //
-    // otlpParentSpanId?.let { spanBuilder.parent_span_id(it) }
-    //
-    // return spanBuilder.build()
-    println("TODO: Implement mapToOtlpSpan() with actual Wire-generated types and full span fields.")
-    return Any() // Placeholder
+    kind: Int // Should map to Span.SpanKind
+): Span {
+    val traceIdBytes = try { ByteString.decodeHex(traceId) } catch (_: Exception) { ByteString.EMPTY }
+    val spanIdBytes = try { ByteString.decodeHex(spanId) } catch (_: Exception) { ByteString.EMPTY }
+    val parentSpanIdBytes = parentSpanId?.let { try { ByteString.decodeHex(it) } catch (_: Exception) { ByteString.EMPTY } } ?: ByteString.EMPTY
+    return Span(
+        trace_id = traceIdBytes,
+        span_id = spanIdBytes,
+        parent_span_id = parentSpanIdBytes,
+        name = name,
+        kind = Span.SpanKind.fromValue(kind) ?: Span.SpanKind.SPAN_KIND_INTERNAL,
+        start_time_unix_nano = startTimeMillis.millisToNanos(),
+        end_time_unix_nano = endTimeMillis.millisToNanos(),
+        attributes = attributes.toOtlpKeyValues(),
+        // status, events, links, etc. can be added as needed
+    )
 }
 
 // TODO: Implement mapToOtlpStatus, mapToOtlpSpanKind helper functions
@@ -145,21 +147,24 @@ fun mapToOtlpLogRecord(
     attributes: Attributes,
     traceId: String? = null, // For correlating with spans
     spanId: String? = null   // For correlating with spans
-): OtlpLogRecord {
-    // val logRecordBuilder = opentelemetry.proto.logs.v1.LogRecord.Builder()
-    //     .time_unix_nano(timestampMillis.millisToNanos())
-    //     .observed_time_unix_nano(System.currentTimeMillis().millisToNanos()) // Or same as timestamp
-    //     // .severity_number(mapToOtlpSeverityNumber(severity))
-    //     .severity_text(severity.name)
-    //     .body(opentelemetry.proto.common.v1.AnyValue.Builder().string_value(message).build())
-    //     .attributes(attributes.toOtlpKeyValues())
-    //
-    // traceId?.let { logRecordBuilder.trace_id(ByteString.decodeHex(it)) }
-    // spanId?.let { logRecordBuilder.span_id(ByteString.decodeHex(it)) }
-    //
-    // return logRecordBuilder.build()
-    println("TODO: Implement mapToOtlpLogRecord() with actual Wire-generated types.")
-    return Any() // Placeholder
+): LogRecord {
+    val traceIdBytes = traceId?.let { try { ByteString.decodeHex(it) } catch (_: Exception) { ByteString.EMPTY } } ?: ByteString.EMPTY
+    val spanIdBytes = spanId?.let { try { ByteString.decodeHex(it) } catch (_: Exception) { ByteString.EMPTY } } ?: ByteString.EMPTY
+    return LogRecord(
+        time_unix_nano = timestampMillis.millisToNanos(),
+        observed_time_unix_nano = System.currentTimeMillis().millisToNanos(),
+        severity_number = when (severity) {
+            LogLevel.DEBUG -> SeverityNumber.SEVERITY_NUMBER_DEBUG
+            LogLevel.INFO -> SeverityNumber.SEVERITY_NUMBER_INFO
+            LogLevel.WARN -> SeverityNumber.SEVERITY_NUMBER_WARN
+            LogLevel.ERROR -> SeverityNumber.SEVERITY_NUMBER_ERROR
+        },
+        severity_text = severity.name,
+        body = AnyValue(string_value = message),
+        attributes = attributes.toOtlpKeyValues(),
+        trace_id = traceIdBytes,
+        span_id = spanIdBytes
+    )
 }
 
 // TODO: Implement mapToOtlpSeverityNumber helper function
@@ -176,29 +181,23 @@ fun mapCounterToOtlpMetric(
     value: Long,
     timestampMillis: Long,
     attributes: Attributes,
-    startTimeMillis: Long // Start time of the counter accumulation period
-): OtlpMetric {
-    // val numberDataPoint = opentelemetry.proto.metrics.v1.NumberDataPoint.Builder()
-    //     .attributes(attributes.toOtlpKeyValues())
-    //     .start_time_unix_nano(startTimeMillis.millisToNanos())
-    //     .time_unix_nano(timestampMillis.millisToNanos())
-    //     .as_int(value) // Or as_double if it's a double counter
-    //     .build()
-    //
-    // val sum = opentelemetry.proto.metrics.v1.Sum.Builder()
-    //     .data_points(listOf(numberDataPoint))
-    //     .aggregation_temporality(opentelemetry.proto.metrics.v1.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE) // Or DELTA
-    //     .is_monotonic(true)
-    //     .build()
-    //
-    // return opentelemetry.proto.metrics.v1.Metric.Builder()
-    //     .name(name)
-    //     // .description("Optional description")
-    //     // .unit("Optional unit")
-    //     .sum(sum)
-    //     .build()
-    println("TODO: Implement mapCounterToOtlpMetric() with actual Wire-generated types.")
-    return Any() // Placeholder
+    startTimeMillis: Long
+): Metric {
+    val dataPoint = NumberDataPoint(
+        attributes = attributes.toOtlpKeyValues(),
+        start_time_unix_nano = startTimeMillis.millisToNanos(),
+        time_unix_nano = timestampMillis.millisToNanos(),
+        as_int = value
+    )
+    val sum = Sum(
+        data_points = listOf(dataPoint),
+        aggregation_temporality = AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE,
+        is_monotonic = true
+    )
+    return Metric(
+        name = name,
+        sum = sum
+    )
 }
 
 /**
@@ -209,23 +208,19 @@ fun mapGaugeToOtlpMetric(
     value: Double,
     timestampMillis: Long,
     attributes: Attributes
-): OtlpMetric {
-    // val numberDataPoint = opentelemetry.proto.metrics.v1.NumberDataPoint.Builder()
-    //     .attributes(attributes.toOtlpKeyValues())
-    //     .time_unix_nano(timestampMillis.millisToNanos())
-    //     .as_double(value)
-    //     .build()
-    //
-    // val gauge = opentelemetry.proto.metrics.v1.Gauge.Builder()
-    //     .data_points(listOf(numberDataPoint))
-    //     .build()
-    //
-    // return opentelemetry.proto.metrics.v1.Metric.Builder()
-    //     .name(name)
-    //     .gauge(gauge)
-    //     .build()
-    println("TODO: Implement mapGaugeToOtlpMetric() with actual Wire-generated types.")
-    return Any() // Placeholder
+): Metric {
+    val dataPoint = NumberDataPoint(
+        attributes = attributes.toOtlpKeyValues(),
+        time_unix_nano = timestampMillis.millisToNanos(),
+        as_double = value
+    )
+    val gauge = Gauge(
+        data_points = listOf(dataPoint)
+    )
+    return Metric(
+        name = name,
+        gauge = gauge
+    )
 }
 
 /**
@@ -238,84 +233,62 @@ fun mapHistogramToOtlpMetric(
     timestampMillis: Long,
     attributes: Attributes,
     startTimeMillis: Long
-): OtlpMetric {
-    // val histogramDataPoint = opentelemetry.proto.metrics.v1.HistogramDataPoint.Builder()
-    //     .attributes(attributes.toOtlpKeyValues())
-    //     .start_time_unix_nano(startTimeMillis.millisToNanos())
-    //     .time_unix_nano(timestampMillis.millisToNanos())
-    //     .count(1) // For a single observation
-    //     .sum(value)
-    //     // TODO: Populate bucket_counts and explicit_bounds if actual histogram data is available
-    //     // .addBucketCounts(...)
-    //     // .addExplicitBounds(...)
-    //     .build()
-    //
-    // val histogram = opentelemetry.proto.metrics.v1.Histogram.Builder()
-    //     .data_points(listOf(histogramDataPoint))
-    //     .aggregation_temporality(opentelemetry.proto.metrics.v1.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE)
-    //     .build()
-    //
-    // return opentelemetry.proto.metrics.v1.Metric.Builder()
-    //     .name(name)
-    //     .histogram(histogram)
-    //     .build()
-    println("TODO: Implement mapHistogramToOtlpMetric() with actual Wire-generated types and full histogram fields.")
-    return Any() // Placeholder
+): Metric {
+    val dataPoint = HistogramDataPoint(
+        attributes = attributes.toOtlpKeyValues(),
+        start_time_unix_nano = startTimeMillis.millisToNanos(),
+        time_unix_nano = timestampMillis.millisToNanos(),
+        count = 1,
+        sum = value
+        // For a real histogram, bucket_counts and explicit_bounds would be set
+    )
+    val histogram = Histogram(
+        data_points = listOf(dataPoint),
+        aggregation_temporality = AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE
+    )
+    return Metric(
+        name = name,
+        histogram = histogram
+    )
 }
 
 // --- Request Wrappers ---
 // OTLP data is sent in request messages like ExportTraceServiceRequest, etc.
 
-fun createTraceExportRequest(spans: List<OtlpSpan>, resource: OtlpResource): Any /* OtlpExportTraceServiceRequest */ {
-    // val resourceSpans = opentelemetry.proto.trace.v1.ResourceSpans.Builder()
-    //     .resource(resource)
-    //     .scope_spans(listOf(
-    //         opentelemetry.proto.trace.v1.ScopeSpans.Builder()
-    //             // .scope(opentelemetry.proto.common.v1.InstrumentationScope.newBuilder().setName("com.bazaar.telemetry").setVersion("0.1.0").build()) // Optional
-    //             .spans(spans)
-    //             .build()
-    //     ))
-    //     .build()
-    //
-    // return opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest.Builder()
-    //     .resource_spans(listOf(resourceSpans))
-    //     .build()
-    println("TODO: Implement createTraceExportRequest() with actual Wire-generated types.")
-    return Any()
+fun createTraceExportRequest(spans: List<Span>, resource: Resource): ExportTraceServiceRequest {
+    val scopeSpans = ScopeSpans(
+        scope = InstrumentationScope(name = "com.bazaar.telemetry", version = "0.1.0"),
+        spans = spans
+    )
+    val resourceSpans = ResourceSpans(
+        resource = resource,
+        scope_spans = listOf(scopeSpans)
+    )
+    return ExportTraceServiceRequest(resource_spans = listOf(resourceSpans))
 }
 
-fun createLogsExportRequest(logRecords: List<OtlpLogRecord>, resource: OtlpResource): Any /* OtlpExportLogsServiceRequest */ {
-    // val resourceLogs = opentelemetry.proto.logs.v1.ResourceLogs.Builder()
-    //     .resource(resource)
-    //     .scope_logs(listOf(
-    //         opentelemetry.proto.logs.v1.ScopeLogs.Builder()
-    //             .log_records(logRecords)
-    //             .build()
-    //     ))
-    //     .build()
-    //
-    // return opentelemetry.proto.collector.logs.v1.ExportLogsServiceRequest.Builder()
-    //     .resource_logs(listOf(resourceLogs))
-    //     .build()
-    println("TODO: Implement createLogsExportRequest() with actual Wire-generated types.")
-    return Any()
+fun createLogsExportRequest(logRecords: List<LogRecord>, resource: Resource): ExportLogsServiceRequest {
+    val scopeLogs = ScopeLogs(
+        scope = InstrumentationScope(name = "com.bazaar.telemetry", version = "0.1.0"),
+        log_records = logRecords
+    )
+    val resourceLogs = ResourceLogs(
+        resource = resource,
+        scope_logs = listOf(scopeLogs)
+    )
+    return ExportLogsServiceRequest(resource_logs = listOf(resourceLogs))
 }
 
-fun createMetricsExportRequest(metrics: List<OtlpMetric>, resource: OtlpResource): Any /* OtlpExportMetricsServiceRequest */ {
-    // val resourceMetrics = opentelemetry.proto.metrics.v1.ResourceMetrics.Builder()
-    //     .resource(resource)
-    //     .scope_metrics(listOf(
-    //         opentelemetry.proto.metrics.v1.ScopeMetrics.Builder()
-    //             .metrics(metrics)
-    //             .build()
-    //     ))
-    //     .build()
-    //
-    // return opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest.Builder()
-    //     .resource_metrics(listOf(resourceMetrics))
-    //     .build()
-    println("TODO: Implement createMetricsExportRequest() with actual Wire-generated types.")
-    return Any()
+fun createMetricsExportRequest(metrics: List<Metric>, resource: Resource): ExportMetricsServiceRequest {
+    val scopeMetrics = ScopeMetrics(
+        scope = InstrumentationScope(name = "com.bazaar.telemetry", version = "0.1.0"),
+        metrics = metrics
+    )
+    val resourceMetrics = ResourceMetrics(
+        resource = resource,
+        scope_metrics = listOf(scopeMetrics)
+    )
+    return ExportMetricsServiceRequest(resource_metrics = listOf(resourceMetrics))
 }
 
 // Note: The actual generated Wire classes will have builders and specific field names.

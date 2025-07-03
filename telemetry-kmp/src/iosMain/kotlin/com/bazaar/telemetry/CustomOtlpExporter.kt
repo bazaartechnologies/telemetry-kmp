@@ -5,6 +5,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import io.opentelemetry.proto.collector.trace.v1.ExportTraceServiceRequest
+import io.opentelemetry.proto.collector.logs.v1.ExportLogsServiceRequest
+import io.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest
 
 // Assuming OtlpMappers.kt contains the necessary mapping functions and typealiases
 // for Wire-generated OTLP objects (OtlpSpan, OtlpLogRecord, OtlpMetric, OtlpResource)
@@ -108,19 +111,15 @@ class CustomOtlpExporter(
             list
         } ?: return
 
-        println("Attempting to export ${spansToExport.size} spans.")
-        // val traceRequest = createTraceExportRequest(spansToExport, otlpResource) // From OtlpMappers.kt
-        // val requestBytes = traceRequest.encodeByteString().toByteArray() // Wire serialization
-        // TODO: Uncomment and implement with actual Wire types and serialization
-        val requestBytes = ByteArray(0) // Placeholder
-        if (requestBytes.isEmpty() && spansToExport.isNotEmpty()) { // Check if placeholder is still active
-             println("WARN: Span export skipped due to placeholder serialization.")
-             return
+        println("Attempting to export [1m${spansToExport.size}[0m spans.")
+        val traceRequest: ExportTraceServiceRequest = createTraceExportRequest(spansToExport, otlpResource)
+        val requestBytes = traceRequest.encodeByteString().toByteArray()
+        if (requestBytes.isEmpty() && spansToExport.isNotEmpty()) {
+            println("WARN: Span export serialization produced empty bytes.")
+            return
         } else if (requestBytes.isEmpty() && spansToExport.isEmpty()) {
             return
         }
-
-
         otlpHttpClient.sendWithRetries("${config.endpoint}/v1/traces", requestBytes, "Traces", maxRetries, initialRetryDelay)
     }
 
@@ -132,18 +131,15 @@ class CustomOtlpExporter(
             list
         } ?: return
 
-        println("Attempting to export ${logsToExport.size} log records.")
-        // val logsRequest = createLogsExportRequest(logsToExport, otlpResource) // From OtlpMappers.kt
-        // val requestBytes = logsRequest.encodeByteString().toByteArray() // Wire serialization
-        // TODO: Uncomment and implement with actual Wire types and serialization
-        val requestBytes = ByteArray(0) // Placeholder
-         if (requestBytes.isEmpty() && logsToExport.isNotEmpty()) {
-             println("WARN: Log export skipped due to placeholder serialization.")
-             return
+        println("Attempting to export [1m${logsToExport.size}[0m log records.")
+        val logsRequest: ExportLogsServiceRequest = createLogsExportRequest(logsToExport, otlpResource)
+        val requestBytes = logsRequest.encodeByteString().toByteArray()
+        if (requestBytes.isEmpty() && logsToExport.isNotEmpty()) {
+            println("WARN: Log export serialization produced empty bytes.")
+            return
         } else if (requestBytes.isEmpty() && logsToExport.isEmpty()) {
             return
         }
-
         otlpHttpClient.sendWithRetries("${config.endpoint}/v1/logs", requestBytes, "Logs", maxRetries, initialRetryDelay)
     }
 
@@ -155,18 +151,15 @@ class CustomOtlpExporter(
             list
         } ?: return
 
-        println("Attempting to export ${metricsToExport.size} metrics.")
-        // val metricsRequest = createMetricsExportRequest(metricsToExport, otlpResource) // From OtlpMappers.kt
-        // val requestBytes = metricsRequest.encodeByteString().toByteArray() // Wire serialization
-        // TODO: Uncomment and implement with actual Wire types and serialization
-        val requestBytes = ByteArray(0) // Placeholder
+        println("Attempting to export [1m${metricsToExport.size}[0m metrics.")
+        val metricsRequest: ExportMetricsServiceRequest = createMetricsExportRequest(metricsToExport, otlpResource)
+        val requestBytes = metricsRequest.encodeByteString().toByteArray()
         if (requestBytes.isEmpty() && metricsToExport.isNotEmpty()) {
-             println("WARN: Metric export skipped due to placeholder serialization.")
-             return
+            println("WARN: Metric export serialization produced empty bytes.")
+            return
         } else if (requestBytes.isEmpty() && metricsToExport.isEmpty()) {
             return
         }
-
         otlpHttpClient.sendWithRetries("${config.endpoint}/v1/metrics", requestBytes, "Metrics", maxRetries, initialRetryDelay)
     }
 

@@ -5,6 +5,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking // Only for synchronous public APIs if necessary
+import io.opentelemetry.proto.trace.v1.Span
+import io.opentelemetry.proto.logs.v1.LogRecord
+import io.opentelemetry.proto.metrics.v1.Metric
 
 // Assumes OtlpMappers.kt and CustomOtlpExporter.kt are in the same package
 // and OtlpMappers.kt will provide the actual mapping functions.
@@ -66,27 +69,21 @@ actual object Telemetry {
             val endTimeMillis = System.currentTimeMillis() // Platform specific time
             val finalAttributes = Attributes.builder().putAll(attributes.mapValues { it.value as Any}).build()
 
-            // TODO: Replace placeholder OtlpSpan with actual mapped object from OtlpMappers.kt
-            // This mapping requires the actual Wire-generated types.
-            // val otlpSpan = mapToOtlpSpan(
-            //     traceId = traceId,
-            //     spanId = spanId,
-            //     parentSpanId = parentSpanId,
-            //     name = name,
-            //     startTimeMillis = startTimeMillis,
-            //     endTimeMillis = endTimeMillis,
-            //     attributes = finalAttributes,
-            //     status = status,
-            //     kind = 0 // Placeholder for OtlpSpanKind.INTERNAL or similar
-            // )
-            val otlpSpanPlaceholder: OtlpSpan = Any() // Placeholder for the mapped OTLP span object
+            val otlpSpan: Span = mapToOtlpSpan(
+                traceId = traceId,
+                spanId = spanId,
+                parentSpanId = parentSpanId,
+                name = name,
+                startTimeMillis = startTimeMillis,
+                endTimeMillis = endTimeMillis,
+                attributes = finalAttributes,
+                status = status,
+                kind = 0 // Placeholder for OtlpSpanKind.INTERNAL or similar
+            )
 
             exporterRef?.let { exp ->
                 telemetryScope.launch {
-                    // exp.addSpan(otlpSpan) // This is the line that sends to exporter
-                    println("CustomSpan closed. TODO: Send mapped OtlpSpan to exporter. Name: $name")
-                    // Remove this placeholder call once mapToOtlpSpan and addSpan are implemented
-                    exp.addSpan(otlpSpanPlaceholder) // Sending placeholder for now
+                    exp.addSpan(otlpSpan)
                 }
             }
         }
@@ -130,29 +127,21 @@ actual object Telemetry {
         }
         val timestampMillis = System.currentTimeMillis() // Platform specific time
 
-        // Merge call-specific attributes with common attributes
         val finalAttributes = Attributes.builder()
             .putAll(currentCommonAttributes.toMap())
             .putAll(attrs.toMap())
             .build()
 
-        // TODO: Add cause to attributes if present and mappers support it.
-        // For now, it's ignored in the direct OtlpLogRecord mapping.
-
-        // TODO: Replace placeholder OtlpLogRecord with actual mapped object from OtlpMappers.kt
-        // val otlpLogRecord = mapToOtlpLogRecord(
-        //     timestampMillis = timestampMillis,
-        //     severity = level,
-        //     message = message,
-        //     attributes = finalAttributes
-        //     // TODO: Pass traceId, spanId if available from context
-        // )
-        val otlpLogPlaceholder: OtlpLogRecord = Any() // Placeholder
+        val otlpLogRecord: LogRecord = mapToOtlpLogRecord(
+            timestampMillis = timestampMillis,
+            severity = level,
+            message = message,
+            attributes = finalAttributes
+            // TODO: Pass traceId, spanId if available from context
+        )
 
         telemetryScope.launch {
-            // currentExporter.addLogRecord(otlpLogRecord)
-             println("Log recorded. TODO: Send mapped OtlpLogRecord to exporter. Message: $message")
-            currentExporter.addLogRecord(otlpLogPlaceholder) // Sending placeholder for now
+            currentExporter.addLogRecord(otlpLogRecord)
         }
     }
 
@@ -161,20 +150,16 @@ actual object Telemetry {
         val timestampMillis = System.currentTimeMillis()
         val finalAttributes = Attributes.builder().putAll(currentCommonAttributes.toMap()).putAll(attrs.toMap()).build()
 
-        // TODO: Replace placeholder OtlpMetric with actual mapped object from OtlpMappers.kt
-        // val otlpMetric = mapCounterToOtlpMetric(
-        //     name = name,
-        //     value = value,
-        //     timestampMillis = timestampMillis,
-        //     attributes = finalAttributes,
-        //     startTimeMillis = currentConfig?.let { System.currentTimeMillis() /* Placeholder for actual start time logic */ } ?: timestampMillis
-        // )
-         val otlpMetricPlaceholder: OtlpMetric = Any()
+        val otlpMetric: Metric = mapCounterToOtlpMetric(
+            name = name,
+            value = value,
+            timestampMillis = timestampMillis,
+            attributes = finalAttributes,
+            startTimeMillis = currentConfig?.let { System.currentTimeMillis() } ?: timestampMillis
+        )
 
         telemetryScope.launch {
-            // currentExporter.addMetric(otlpMetric)
-            println("Counter recorded. TODO: Send mapped OtlpMetric to exporter. Name: $name")
-            currentExporter.addMetric(otlpMetricPlaceholder)
+            currentExporter.addMetric(otlpMetric)
         }
     }
 
@@ -183,19 +168,15 @@ actual object Telemetry {
         val timestampMillis = System.currentTimeMillis()
         val finalAttributes = Attributes.builder().putAll(currentCommonAttributes.toMap()).putAll(attrs.toMap()).build()
 
-        // TODO: Replace placeholder OtlpMetric
-        // val otlpMetric = mapHistogramToOtlpMetric(
-        //     name = name,
-        //     value = value,
-        //     timestampMillis = timestampMillis,
-        //     attributes = finalAttributes,
-        //     startTimeMillis = currentConfig?.let { System.currentTimeMillis() /* Placeholder */ } ?: timestampMillis
-        // )
-        val otlpMetricPlaceholder: OtlpMetric = Any()
+        val otlpMetric: Metric = mapHistogramToOtlpMetric(
+            name = name,
+            value = value,
+            timestampMillis = timestampMillis,
+            attributes = finalAttributes,
+            startTimeMillis = currentConfig?.let { System.currentTimeMillis() } ?: timestampMillis
+        )
         telemetryScope.launch {
-            // currentExporter.addMetric(otlpMetric)
-             println("Histogram recorded. TODO: Send mapped OtlpMetric to exporter. Name: $name")
-            currentExporter.addMetric(otlpMetricPlaceholder)
+            currentExporter.addMetric(otlpMetric)
         }
     }
 
